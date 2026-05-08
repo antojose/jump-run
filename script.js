@@ -128,6 +128,14 @@ if (player.x < 0) player.x = 0;
         player.x = WORLD_WIDTH - player.width;
         player.velX = 0;
     }
+    // Detect falling off the right side where ground ends early and rotate sprite
+    const groundEnd = platforms[0].x + platforms[0].width;
+    if (player.velY > 0 && (player.x + player.width) > groundEnd) {
+        player.flipped = true;
+    } else if (!gameOver) {
+        // Reset flip when not falling off that edge and game is not over
+        player.flipped = false;
+    }
     // Death if player falls below the visible area
     if (player.y > canvas.height) {
         // Determine if falling off the right side where the ground ends early
