@@ -34,15 +34,16 @@ jumpSound.volume = 0.6;
 
 // Player object
 const player = {
-  facing: 'right',
-  x: 50,
-  y: 300,
-  width: 40,
-  height: 60,
-  velX: 0,
-  velY: 0,
-  jumping: false,
-  flipped: false,
+    facing: 'right',
+    x: 50,
+    y: 300,
+    width: 40,
+    height: 60,
+    velX: 0,
+    velY: 0,
+    jumping: false,
+    shouldFlip: false,
+    shouldFlip: false,
 };
 let gameOver = false;
 let lives = 3; // total lives
@@ -95,7 +96,7 @@ window.addEventListener('keydown', e => {
     player.velX = 0;
     player.velY = 0;
 player.jumping = false;
-      player.flipped = false;
+      player.shouldFlip = false;
     cameraX = 0;
     gameOver = false;
     deathMessage = null;
@@ -124,17 +125,20 @@ function update(){
 
    // World bounds (prevent moving left off start, wrap on right edge)
 if (player.x < 0) player.x = 0;
-    if (player.x > WORLD_WIDTH - player.width) {
+if (player.x > WORLD_WIDTH - player.width) {
         player.x = WORLD_WIDTH - player.width;
         player.velX = 0;
+        // When hitting right world boundary, flip sprite vertically
+        player.shouldFlip = true;
     }
+    // No else: retain flip state until player lands
     // Detect falling off the right side where ground ends early and rotate sprite
     const groundEnd = platforms[0].x + platforms[0].width;
     if (player.velY > 0 && (player.x + player.width) > groundEnd) {
-        player.flipped = true;
+        player.shouldFlip = true;
     } else if (!gameOver) {
         // Reset flip when not falling off that edge and game is not over
-        player.flipped = false;
+        player.shouldFlip = false;
     }
     // Death if player falls below the visible area
     if (player.y > canvas.height) {
@@ -145,12 +149,12 @@ if (player.x < 0) player.x = 0;
             lives--;
             deathMessage = `Oh no, you are D.E.A.D....\n\nBut thank God, you have ${lives} more ${lives===1 ? 'life' : 'lives'} to try again.\nPress ENTER key to continue...`;
             gameOver = true;
-            player.flipped = fellOffRight; // rotate if off right side
+            player.shouldFlip = fellOffRight; // rotate if off right side
         } else {
             lives = 0;
             deathMessage = "Oh no, you are D.E.A.D....\n\nAnd this time, no coming back.\nGAME OVER!";
             gameOver = true;
-            player.flipped = fellOffRight;
+            player.shouldFlip = fellOffRight;
         }
     }
 
@@ -168,20 +172,25 @@ platforms.forEach(p => {
     if (p.y < p.minY || p.y > p.maxY) p.velY *= -1;
   }
 });
-  for (let p of platforms){
-    if (rectCollision(player,p)){
-      if (player.velY > 0 && player.y + player.height - player.velY <= p.y){
-  player.y = p.y - player.height;
-  player.velY = 0;
-  player.jumping = false;
-  if (p.velX) player.x += p.velX;
-  if (p.velY) player.y += p.velY;
+    for (let p of platforms){
+      if (rectCollision(player,p)){
+        if (player.velY > 0 && player.y + player.height - player.velY <= p.y){
+    player.y = p.y - player.height;
+    player.velY = 0;
+    player.jumping = false;
+    if (p.velX) player.x += p.velX;
+    if (p.velY) player.y += p.velY;
 }
-      else if (player.velY < 0 && player.y >= p.y + p.height - player.velY){ player.y = p.y + p.height; player.velY = 0; }
-      else if (player.velX > 0 && player.x + player.width - player.velX <= p.x){ player.x = p.x - player.width; player.velX = 0; }
-      else if (player.velX < 0 && player.x >= p.x + p.width - player.velX){ player.x = p.x + p.width; player.velX = 0; }
+        else if (player.velY < 0 && player.y >= p.y + p.height - player.velY){ player.y = p.y + p.height; player.velY = 0; }
+        else if (player.velX > 0 && player.x + player.width - player.velX <= p.x){ player.x = p.x - player.width; player.velX = 0; }
+        else if (player.velX < 0 && player.x >= p.x + p.width - player.velX){ player.x = p.x + p.width; player.velX = 0; }
+      }
     }
-  }
+    // Reset flipped when player is not falling
+    if (player.velY <= 0) {
+        player.shouldFlip = false;
+    }
+
 
     // Villains movement & collision
     villains.forEach(v => {
@@ -237,7 +246,7 @@ function draw(){
     // Player
     if (spriteLoaded){
       const spr = player.facing === 'right' ? spriteRight : spriteLeft;
-      if (player.flipped) {
+      if (player.shouldFlip) {
         // Rotate sprite 180° around its center (head‑first)
         ctx.save();
         ctx.translate(player.x - cameraX + player.width/2, player.y + player.height/2);
