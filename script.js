@@ -44,6 +44,7 @@ const player = {
   jumping: false,
 };
 let gameOver = false;
+let lives = 3; // total lives
 let gameWon = false;
 let deathMessage = null;
 
@@ -84,6 +85,20 @@ const villains = [
 const keys = {};
 window.addEventListener('keydown', e => { keys[e.code] = true; });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
+// Restart after death if lives remain (ENTER key)
+window.addEventListener('keydown', e => {
+  if (gameOver && lives > 0 && (e.code === 'Enter' || e.key === 'Enter')) {
+    // Reset player position and state
+    player.x = 50;
+    player.y = 300;
+    player.velX = 0;
+    player.velY = 0;
+    player.jumping = false;
+    cameraX = 0;
+    gameOver = false;
+    deathMessage = null;
+  }
+});
 
 function rectCollision(a, b){
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
@@ -108,11 +123,18 @@ function update(){
    // World bounds (prevent moving left off start, wrap on right edge)
    if (player.x < 0) player.x = 0;
    if (player.x > WORLD_WIDTH - player.width) player.x = 0;
-   // Death if player falls below the visible area
-   if (player.y > canvas.height) {
-       gameOver = true;
-       deathMessage = 'Oh no, you are D.E.A.D!';
-   }
+    // Death if player falls below the visible area
+    if (player.y > canvas.height) {
+        if (lives > 1) {
+            lives--;
+            deathMessage = `Oh no, you are D.E.A.D....\n\nBut thank God, you have ${lives} more ${lives===1 ? 'life' : 'lives'} to try again.\nPress ENTER key to continue...`;
+            gameOver = true;
+        } else {
+            lives = 0;
+            deathMessage = "Oh no, you are D.E.A.D....\n\nAnd this time, no coming back.\nGAME OVER!";
+            gameOver = true;
+        }
+    }
 
 
   // Platform collisions
@@ -143,14 +165,22 @@ platforms.forEach(p => {
     }
   }
 
-  // Villains movement & collision
-  villains.forEach(v => {
-    v.x += v.velX;
-    if (v.x < v.leftBound || v.x > v.rightBound) v.velX *= -1;
-    if (rectCollision(player, v)){
-      player.x = 50; player.y = 300; player.velX = 0; player.velY = 0; cameraX = 0;
-    }
-  });
+    // Villains movement & collision
+    villains.forEach(v => {
+      v.x += v.velX;
+      if (v.x < v.leftBound || v.x > v.rightBound) v.velX *= -1;
+      if (rectCollision(player, v)){
+        if (lives > 1) {
+          lives--;
+          deathMessage = `Oh no, you are D.E.A.D....\n\nBut thank God, you have ${lives} more ${lives===1 ? 'life' : 'lives'} to try again.\nPress ENTER key to continue...`;
+          gameOver = true;
+        } else {
+          lives = 0;
+          deathMessage = "Oh no, you are D.E.A.D....\n\nAnd this time, no coming back.\nGAME OVER!";
+          gameOver = true;
+        }
+      }
+    });
 
   // End door collision -> win
   if (rectCollision(player, doors[1])){ gameOver = true; gameWon = true; }
@@ -178,24 +208,38 @@ function draw(){
   // Doors
   ctx.fillStyle = '#8B4513';
   doors.forEach(d=> ctx.fillRect(d.x - cameraX, d.y, d.width, d.height));
-  // Player
-  if (spriteLoaded){
-    const spr = player.facing === 'right' ? spriteRight : spriteLeft;
-    ctx.drawImage(spr, player.x - cameraX, player.y, player.width, player.height);
-  } else {
-    ctx.fillStyle = '#ff0';
-    ctx.fillRect(player.x - cameraX, player.y, player.width, player.height);
-  }
-   // End screen overlay
-   if (gameOver){
-     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-     ctx.fillRect(0,0,canvas.width,canvas.height);
-     ctx.fillStyle = '#fff';
-     ctx.font = '48px sans-serif';
-     ctx.textAlign = 'center';
-     const msg = deathMessage ? deathMessage : (gameWon ? 'You Win!' : 'Game Over');
-     ctx.fillText(msg, canvas.width/2, canvas.height/2);
-   }
+    // Player
+    if (spriteLoaded){
+      const spr = player.facing === 'right' ? spriteRight : spriteLeft;
+      ctx.drawImage(spr, player.x - cameraX, player.y, player.width, player.height);
+    } else {
+      ctx.fillStyle = '#ff0';
+      ctx.fillRect(player.x - cameraX, player.y, player.width, player.height);
+    }
+    // Lives indicator (bottom‑right)
+    if (lives > 0) {
+      const padding = 10;
+      ctx.font = '24px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`Lives: ${lives}`, canvas.width - padding, canvas.height - padding);
+    }
+    // End screen overlay
+    if (gameOver){
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      const msg = deathMessage ? deathMessage : (gameWon ? 'You Win!' : 'Game Over');
+      // Split message by newlines and centre each line vertically
+      const lines = msg.split('\n');
+      ctx.font = '36px sans-serif';
+      const startY = canvas.height/2 - (lines.length - 1) * 20;
+      for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], canvas.width/2, startY + i * 40);
+      }
+    }
+
 }
 
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
