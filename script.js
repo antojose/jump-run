@@ -54,10 +54,10 @@ const platforms = [
   { x: 350, y: 250, width: 120, height: 10 },
   { x: 500, y: 200, width: 100, height: 10 },
   { x: 650, y: 180, width: 150, height: 10 },
-  { x: 800, y: 260, width: 120, height: 10 },
+  { x: 800, y: 260, width: 120, height: 10, velY: 1, minY: 200, maxY: 260 },
   { x: 950, y: 240, width: 120, height: 10 },
   { x: 1100, y: 220, width: 100, height: 10 },
-  { x: 1300, y: 200, width: 150, height: 10 },
+  { x: 1300, y: 200, width: 150, height: 10, velX: 1, minX: 1200, maxX: 1400 },
   { x: 1500, y: 180, width: 120, height: 10 },
   { x: 1700, y: 160, width: 100, height: 10 },
   { x: 1900, y: 140, width: 150, height: 10 },
@@ -77,7 +77,7 @@ const doors = [
 const villains = [
   { x: 220, y: 260, width: 30, height: 40, velX: 1, leftBound: 200, rightBound: 340 },
   { x: 970, y: 190, width: 30, height: 40, velX: 1.5, leftBound: 950, rightBound: 1070 },
-  { x: 1520, y: 140, width: 30, height: 40, velX: 2, leftBound: 1500, rightBound: 1620 },
+  { x: 1520, y: 140, width: 30, height: 40, velX: 1.2, leftBound: 1500, rightBound: 1620 },
 ];
 
 // Input handling
@@ -116,10 +116,27 @@ function update(){
 
 
   // Platform collisions
-  player.jumping = true;
+player.jumping = true;
+// Update moving platforms (horizontal or vertical)
+platforms.forEach(p => {
+  if (p.velX) {
+    p.x += p.velX;
+    if (p.x < p.minX || p.x > p.maxX) p.velX *= -1;
+  }
+  if (p.velY) {
+    p.y += p.velY;
+    if (p.y < p.minY || p.y > p.maxY) p.velY *= -1;
+  }
+});
   for (let p of platforms){
     if (rectCollision(player,p)){
-      if (player.velY > 0 && player.y + player.height - player.velY <= p.y){ player.y = p.y - player.height; player.velY = 0; player.jumping = false; }
+      if (player.velY > 0 && player.y + player.height - player.velY <= p.y){
+  player.y = p.y - player.height;
+  player.velY = 0;
+  player.jumping = false;
+  if (p.velX) player.x += p.velX;
+  if (p.velY) player.y += p.velY;
+}
       else if (player.velY < 0 && player.y >= p.y + p.height - player.velY){ player.y = p.y + p.height; player.velY = 0; }
       else if (player.velX > 0 && player.x + player.width - player.velX <= p.x){ player.x = p.x - player.width; player.velX = 0; }
       else if (player.velX < 0 && player.x >= p.x + p.width - player.velX){ player.x = p.x + p.width; player.velX = 0; }
