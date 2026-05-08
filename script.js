@@ -43,7 +43,6 @@ const player = {
     velY: 0,
     jumping: false,
     shouldFlip: false,
-    shouldFlip: false,
 };
 let gameOver = false;
 let lives = 3; // total lives
@@ -87,6 +86,41 @@ const villains = [
 const keys = {};
 window.addEventListener('keydown', e => { keys[e.code] = true; });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// Mobile touch controls (shown only on small screens)
+const btnLeft = document.getElementById('btn-left');
+const btnLeftUp = document.getElementById('btn-leftup');
+const btnUp = document.getElementById('btn-up');
+const btnRight = document.getElementById('btn-right');
+const btnRightUp = document.getElementById('btn-rightup');
+if (btnLeft && btnLeftUp && btnUp && btnRight && btnRightUp) {
+  const setKey = (code, state) => { keys[code] = state; };
+  btnLeft.addEventListener('pointerdown', () => setKey('ArrowLeft', true));
+  btnLeft.addEventListener('pointerup', () => setKey('ArrowLeft', false));
+  btnLeft.addEventListener('pointerleave', () => setKey('ArrowLeft', false));
+
+  btnRight.addEventListener('pointerdown', () => setKey('ArrowRight', true));
+  btnRight.addEventListener('pointerup', () => setKey('ArrowRight', false));
+  btnRight.addEventListener('pointerleave', () => setKey('ArrowRight', false));
+
+  // Up button for jump
+  btnUp.addEventListener('pointerdown', () => setKey('Space', true));
+  btnUp.addEventListener('pointerup', () => setKey('Space', false));
+  btnUp.addEventListener('pointerleave', () => setKey('Space', false));
+
+  // Diagonal buttons combine movement and jump
+  btnLeftUp.addEventListener('pointerdown', () => { setKey('ArrowLeft', true); setKey('Space', true); });
+  btnLeftUp.addEventListener('pointerup', () => { setKey('ArrowLeft', false); setKey('Space', false); });
+  btnLeftUp.addEventListener('pointerleave', () => { setKey('ArrowLeft', false); setKey('Space', false); });
+
+  btnRightUp.addEventListener('pointerdown', () => { setKey('ArrowRight', true); setKey('Space', true); });
+  btnRightUp.addEventListener('pointerup', () => { setKey('ArrowRight', false); setKey('Space', false); });
+  btnRightUp.addEventListener('pointerleave', () => { setKey('ArrowRight', false); setKey('Space', false); });
+}
+
+// Prevent default scrolling on touchmove while playing
+window.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
 // Restart after death if lives remain (ENTER key)
 window.addEventListener('keydown', e => {
   if (gameOver && lives > 0 && (e.code === 'Enter' || e.key === 'Enter')) {
