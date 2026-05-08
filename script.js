@@ -121,8 +121,11 @@ function update(){
   player.y += player.velY;
 
    // World bounds (prevent moving left off start, wrap on right edge)
-   if (player.x < 0) player.x = 0;
-   if (player.x > WORLD_WIDTH - player.width) player.x = 0;
+if (player.x < 0) player.x = 0;
+    if (player.x > WORLD_WIDTH - player.width) {
+        player.x = WORLD_WIDTH - player.width;
+        player.velX = 0;
+    }
     // Death if player falls below the visible area
     if (player.y > canvas.height) {
         if (lives > 1) {
