@@ -42,6 +42,7 @@ const player = {
   velX: 0,
   velY: 0,
   jumping: false,
+  flipped: false,
 };
 let gameOver = false;
 let lives = 3; // total lives
@@ -93,7 +94,8 @@ window.addEventListener('keydown', e => {
     player.y = 300;
     player.velX = 0;
     player.velY = 0;
-    player.jumping = false;
+player.jumping = false;
+      player.flipped = false;
     cameraX = 0;
     gameOver = false;
     deathMessage = null;
@@ -128,14 +130,19 @@ if (player.x < 0) player.x = 0;
     }
     // Death if player falls below the visible area
     if (player.y > canvas.height) {
+        // Determine if falling off the right side where the ground ends early
+        const groundEnd = platforms[0].x + platforms[0].width; // ground platform end x
+        const fellOffRight = (player.x + player.width) > groundEnd;
         if (lives > 1) {
             lives--;
             deathMessage = `Oh no, you are D.E.A.D....\n\nBut thank God, you have ${lives} more ${lives===1 ? 'life' : 'lives'} to try again.\nPress ENTER key to continue...`;
             gameOver = true;
+            player.flipped = fellOffRight; // rotate if off right side
         } else {
             lives = 0;
             deathMessage = "Oh no, you are D.E.A.D....\n\nAnd this time, no coming back.\nGAME OVER!";
             gameOver = true;
+            player.flipped = fellOffRight;
         }
     }
 
@@ -222,7 +229,16 @@ function draw(){
     // Player
     if (spriteLoaded){
       const spr = player.facing === 'right' ? spriteRight : spriteLeft;
-      ctx.drawImage(spr, player.x - cameraX, player.y, player.width, player.height);
+      if (player.flipped) {
+        // Rotate sprite 180° around its center (head‑first)
+        ctx.save();
+        ctx.translate(player.x - cameraX + player.width/2, player.y + player.height/2);
+        ctx.rotate(Math.PI);
+        ctx.drawImage(spr, -player.width/2, -player.height/2, player.width, player.height);
+        ctx.restore();
+      } else {
+        ctx.drawImage(spr, player.x - cameraX, player.y, player.width, player.height);
+      }
     } else {
       ctx.fillStyle = '#ff0';
       ctx.fillRect(player.x - cameraX, player.y, player.width, player.height);
