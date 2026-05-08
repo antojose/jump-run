@@ -188,14 +188,22 @@ platforms.forEach(p => {
   // End door collision -> win
   if (rectCollision(player, doors[1])){ gameOver = true; gameWon = true; }
 
-  // Camera handling
-  if (player.x - cameraX > CAMERA_MARGIN && player.x < WORLD_WIDTH - canvas.width + CAMERA_MARGIN){
-    cameraX = player.x - CAMERA_MARGIN;
-  } else if (player.x - cameraX < LEFT_MARGIN && player.x > CAMERA_MARGIN){
-    cameraX = player.x - LEFT_MARGIN;
-  }
-  if (cameraX < 0) cameraX = 0;
-  if (cameraX > MAX_CAMERA) cameraX = MAX_CAMERA;
+    // Camera handling – keep camera within world bounds and ensure left door stays visible
+    // Move camera right when player approaches right side
+    if (player.x - cameraX > CAMERA_MARGIN && player.x < WORLD_WIDTH - canvas.width + CAMERA_MARGIN) {
+        cameraX = player.x - CAMERA_MARGIN;
+    }
+    // Move camera left when player approaches left side, but never beyond 0
+    else if (player.x - cameraX < LEFT_MARGIN && cameraX > 0) {
+        cameraX = Math.max(0, player.x - LEFT_MARGIN);
+    }
+    // Clamp camera to world limits
+    if (cameraX < 0) cameraX = 0;
+    if (cameraX > MAX_CAMERA) cameraX = MAX_CAMERA;
+    // If player is near the very left edge, snap camera to start so the left door is visible
+    if (player.x <= CAMERA_MARGIN) {
+        cameraX = 0;
+    }
 }
 
 let cameraX = 0;
